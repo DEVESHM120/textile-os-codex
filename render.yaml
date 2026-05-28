@@ -2,14 +2,13 @@ services:
   - type: web
     name: textile-os-backend
     runtime: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     envVars:
       - key: FLASK_ENV
         value: production
       - key: TEXTILE_RUNTIME_DIR
-        value: /opt/render/project/.runtime
+        value: /tmp/.runtime
       - key: FF_SECRET_KEY
         generateValue: true
       - key: FF_ADMIN_PASSWORD
