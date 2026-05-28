@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: textile-os-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: TEXTILE_RUNTIME_DIR
+        value: /opt/render/project/.runtime
+      - key: FF_SECRET_KEY
+        generateValue: true
+      - key: FF_ADMIN_PASSWORD
+        value: admin1234
+      - key: FF_DESIGNER_PASSWORD
+        value: designer123
+      - key: FF_FTC_PASSWORD
+        value: ftcmember123
+      - key: CORS_ORIGINS
+        value: https://textile-os-codex.vercel.app
+      - key: OPENAI_API_KEY
+        value: ""
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini

@@ -47,7 +47,9 @@ SAMPLE_CARD = PROJECT_DIR / "data" / "samples" / "sample_cloth_card.txt"
 def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     load_dotenv(PROJECT_DIR / ".env")
     app = Flask(__name__)
-    CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+    _raw_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    _allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+    CORS(app, supports_credentials=True, origins=_allowed_origins)
 
     runtime_dir = Path(os.getenv("TEXTILE_RUNTIME_DIR", PROJECT_DIR / ".runtime"))
     if not runtime_dir.is_absolute():
