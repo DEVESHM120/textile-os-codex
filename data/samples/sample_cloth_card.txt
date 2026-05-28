@@ -1,0 +1,37 @@
+Card Ref: DEMO-FF-001
+Customer: Hackathon Brand
+Buyer: Demo Buyer
+Fabric Category: Mid Wt
+Construction: 40 Ne cotton warp x 40 Ne cotton weft, 120 x 72 plain weave
+Composition: 100% Cotton
+Weave: Plain
+Weave Number: 101
+Loom Type: Airjet
+GSM: 212
+Theoretical GSM: 205
+Grey EPI: 120
+Finished EPI: 124
+Grey PPI: 72
+Finished PPI: 76
+Grey Width Inches: 63
+Finished Width Inches: 58
+Reed Count: 72
+Reed Space Inches: 65
+Body Ends: 7440
+Selvedge Ends: 96
+Total Ends: 7536
+Ends Per Repeat: 8
+Peg Plan Repeats: 9
+Shaft Count: 8
+Warp Count Ne: 40
+Weft Count Ne: 40
+Warp Weight Percent: 62
+Weft Weight Percent: 38
+Warp Beam Weight Kg: 690
+Pick Rate Meters Per Min: 6.5
+Finish Code: CT-DA
+K1: HMM15W
+K2: W11001
+K3: C66001
+K4: HH01
+K5: CT-DA
