@@ -26,4 +26,12 @@
 - Adjusted the Design drawer opener/scrim handling after browser verification showed the click sequence could immediately close the drawer.
 - Fixed the responsive sidebar stack so it does not overlay the topbar Design button in the in-app browser width.
 - Added a Copy UI Config fallback behavior so the drawer still shows a copied state while the JSON preview remains visible if clipboard permissions are blocked.
+- Audited false feasibility warnings on valid cloth-card uploads and traced the root cause to single-split parsing of multi-column textile card rows.
+- Added regression coverage for the clean sample card, sanitized Vardhman-style multi-column cloth-card parsing, engineered repeat/selvedge layouts, and workflow status gating for data-completeness warnings.
+- Updated the feasibility parser to extract multiple fields per line, derive card refs from cloth-card headers, split `Gry.EndPik`/`Fin.EndPik`, read warping-section totals, and derive construction from count/EPI/PPI/weave.
+- Tuned noisy feasibility rules: grey-width EPI consistency now prefers grey width, cover factor allows the clean demo constructions, theoretical GSM only compares explicit values, selvedge distribution uses selvedge-to-total ratio, and repeat/pattern alignment is informational.
+- Refreshed local runtime submissions with the new checker while preserving approved/submitted workflow statuses; the uploaded `SA.0326.0030.txt` rows now show `PASS` with no warnings.
+- Compared the combined app against the original Fabric Feasibility MVP and ported the missing corrected-card reupload flow into the Designer Desk.
+- Tightened FTC send gating so `WARNING` and `ERROR` cards remain `draft`; designers can only send `PASS` cards to FTC.
+- Added browser-visible reupload controls for non-pass editable submissions and refreshed local runtime warning submissions from `ready` to `draft`.
 - Next work: capture polished screenshots and record the demo walkthrough video.

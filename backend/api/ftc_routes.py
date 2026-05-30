@@ -26,6 +26,7 @@ from db import (
     list_designer_submissions,
     list_ftc_inbox,
     update_submission_check,
+    update_submission_source_and_check,
     update_submission_status,
 )
 from services.feasibility import check_fabric
@@ -77,10 +78,42 @@ def api_designer_recheck(sub_id: int):
         return jsonify({"error": "Not found"}), 404
     if sub["designer_id"] != g.user["user_id"] and g.user["role"] != "admin":
         return jsonify({"error": "Access denied"}), 403
+    if sub["status"] not in ("draft", "needs_revision"):
+        return jsonify({"error": "Cannot recheck because this submission is not editable"}), 400
 
     text   = sub["card_raw_text"] or ""
     result = check_fabric(text, source_filename=sub.get("card_filename", "card.txt"))
     new_status = update_submission_check(_db(), sub_id, result["card"], result["report"])
+    sub = get_submission(_db(), sub_id)
+    return jsonify({"submission": sub, "status": new_status})
+
+
+@designer_bp.post("/api/designer/reupload/<int:sub_id>")
+@role_required("designer", "admin")
+def api_designer_reupload(sub_id: int):
+    sub = get_submission(_db(), sub_id)
+    if not sub:
+        return jsonify({"error": "Not found"}), 404
+    if sub["designer_id"] != g.user["user_id"] and g.user["role"] != "admin":
+        return jsonify({"error": "Access denied"}), 403
+    if sub["status"] not in ("draft", "needs_revision") and sub.get("check_result", {}).get("gate") == "PASS":
+        return jsonify({"error": "Cannot re-upload because this submission is not editable"}), 400
+
+    text, filename = extract_text_payload()
+    if not text.strip():
+        return jsonify({"error": "No card text provided"}), 400
+    if not filename.lower().endswith(".txt"):
+        return jsonify({"error": "Only .txt cloth-card files are accepted"}), 400
+
+    result = check_fabric(text, source_filename=filename)
+    new_status = update_submission_source_and_check(
+        _db(),
+        sub_id,
+        filename,
+        text,
+        result["card"],
+        result["report"],
+    )
     sub = get_submission(_db(), sub_id)
     return jsonify({"submission": sub, "status": new_status})
 
@@ -93,8 +126,15 @@ def api_designer_send(sub_id: int):
         return jsonify({"error": "Not found"}), 404
     if sub["designer_id"] != g.user["user_id"] and g.user["role"] != "admin":
         return jsonify({"error": "Access denied"}), 403
-    if sub["status"] not in ("ready", "needs_revision"):
+    if sub.get("check_result", {}).get("gate") != "PASS":
+        return jsonify({"error": "Cloth card must PASS all checks before sending to FTC"}), 400
+    if sub["status"] != "ready":
         return jsonify({"error": f"Cannot send from status '{sub['status']}'"}), 400
+
+    data = request.get_json(silent=True) or {}
+    note = (data.get("note") or "").strip()
+    if note:
+        add_message(_db(), sub_id, g.user["user_id"], g.user["display_name"], g.user["role"], note)
 
     update_submission_status(_db(), sub_id, "submitted")
     return jsonify({"ok": True, "status": "submitted"})

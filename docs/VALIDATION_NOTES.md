@@ -4,7 +4,7 @@
 
 Passed for the MVP build.
 
-- Backend tests: `8 passed`.
+- Backend tests: `12 passed`.
 - Frontend build: `npm run build` passed.
 - Docs freshness: passed.
 - Browser desktop flow: sample card to feasibility review to AI fallback to label artifact passed.
@@ -19,6 +19,15 @@ Passed for the MVP build.
 - UI lock backend safety: backend tests remained green after the frontend-only UI lock pass.
 - UI lock browser check: verified default Designer Desk preview, drawer opening, template/density/navigation/issue/accent changes, localStorage persistence after refresh, reset to defaults, FTC/Sticker preview navigation, and no horizontal overflow at the in-app browser width.
 - Copy UI Config fallback: the visible JSON config remains in the drawer if the in-app browser blocks clipboard writes.
+- Feasibility false-warning regression: backend tests now verify the known-good sample card returns `PASS` with zero warnings.
+- Multi-column cloth-card regression: backend tests verify sanitized textile card rows parse `Gry.EndPik`, `Fin.EndPik`, `GMS/SQ.MT`, `FAB COMP`, `R.SPC(IN)`, warping-section totals, and `LOOM TYPE` into canonical fields.
+- Engineered repeat regression: backend tests verify valid repeat/selvedge layouts do not create warning gates when totals are internally consistent.
+- Workflow status regression: backend tests verify data-completeness warnings keep submissions in `draft`, while normal feasibility warnings can still move to `ready`.
+- Runtime recheck: local `.runtime` submissions were reprocessed with the new checker; `SA.0326.0030.txt` now returns `PASS` with no warnings, while approved/submitted statuses were preserved.
+- Browser sanity check: after refresh, Designer Desk shows the reprocessed `SA.0326.0030` submission as `PASS`, `0E · 0W`; opening the card shows no Warnings section.
+- FTC send gate parity: backend tests verify warning cards remain `draft` and cannot be sent to FTC.
+- Corrected-card reupload parity: backend tests verify a designer can reupload a corrected `.txt` into the same submission and move it to `ready` only after it returns `PASS`.
+- Browser parity check: Designer Desk shows warning cards as `Draft`, disables `Send to FTC`, and displays the `Re-upload Corrected Card` button.
 
 Browser verification found a sample-card API path issue; the route was fixed and a regression test was added.
 

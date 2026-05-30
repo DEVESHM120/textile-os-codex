@@ -12,6 +12,12 @@ from pathlib import Path
 from typing import Optional
 
 
+DATA_BLOCKING_WARNING_CODES = {
+    "MISSING_REQUIRED_FIELD",
+    "COMPOSITION_UNPARSED",
+}
+
+
 def _conn(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
@@ -79,6 +85,10 @@ def init_workflow_tables(db_path: Path) -> None:
 
 # ── Submissions ───────────────────────────────────────────────────────────────
 
+def submission_status_for_report(report: dict) -> str:
+    return "ready" if report.get("gate") == "PASS" else "draft"
+
+
 def create_submission(
     db_path: Path,
     designer_id: int,
@@ -89,8 +99,7 @@ def create_submission(
     check_result: dict,
 ) -> int:
     now  = datetime.utcnow().isoformat()
-    gate = check_result.get("gate", "ERROR")
-    status = "ready" if gate != "ERROR" else "draft"
+    status = submission_status_for_report(check_result)
     with _conn(db_path) as conn:
         cur = conn.execute(
             """INSERT INTO submissions
@@ -104,13 +113,42 @@ def create_submission(
 
 
 def update_submission_check(db_path: Path, submission_id: int, card_parsed: dict, check_result: dict) -> str:
-    gate   = check_result.get("gate", "ERROR")
-    status = "ready" if gate != "ERROR" else "draft"
+    status = submission_status_for_report(check_result)
     now    = datetime.utcnow().isoformat()
     with _conn(db_path) as conn:
         conn.execute(
             "UPDATE submissions SET card_parsed=?, check_result=?, status=?, updated_at=? WHERE id=?",
             (json.dumps(card_parsed), json.dumps(check_result), status, now, submission_id),
+        )
+    return status
+
+
+def update_submission_source_and_check(
+    db_path: Path,
+    submission_id: int,
+    card_filename: str,
+    card_raw_text: str,
+    card_parsed: dict,
+    check_result: dict,
+) -> str:
+    status = submission_status_for_report(check_result)
+    now = datetime.utcnow().isoformat()
+    with _conn(db_path) as conn:
+        conn.execute(
+            """UPDATE submissions
+               SET card_ref=?, card_filename=?, card_raw_text=?, card_parsed=?,
+                   check_result=?, status=?, updated_at=?
+               WHERE id=?""",
+            (
+                card_parsed.get("card_ref") or card_filename,
+                card_filename,
+                card_raw_text,
+                json.dumps(card_parsed),
+                json.dumps(check_result),
+                status,
+                now,
+                submission_id,
+            ),
         )
     return status
 

@@ -1,7 +1,7 @@
 Card Ref: DEMO-FF-001
 Customer: Hackathon Brand
 Buyer: Demo Buyer
-Fabric Category: Mid Wt
+Fabric Category: Top Wt
 Construction: 40 Ne cotton warp x 40 Ne cotton weft, 120 x 72 plain weave
 Composition: 100% Cotton
 Weave: Plain

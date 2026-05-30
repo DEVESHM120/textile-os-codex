@@ -1616,6 +1616,28 @@ textarea {
 .detail-actions { display: flex; gap: 8px; }
 .detail-status-row { display: flex; gap: 8px; align-items: center; }
 
+.reupload-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+}
+.reupload-panel strong {
+  display: block;
+  color: var(--warn);
+  font-size: 13px;
+}
+.reupload-panel p {
+  margin: 4px 0 0;
+  color: var(--grey-700);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .detail-note textarea, .ftc-actions textarea {
   width: 100%;
   min-height: 60px;
@@ -1741,6 +1763,11 @@ textarea {
 @media (max-width: 700px) {
   .desk-layout, .inbox-layout, .review-panels {
     grid-template-columns: 1fr;
+  }
+
+  .reupload-panel {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

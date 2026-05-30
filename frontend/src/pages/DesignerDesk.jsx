@@ -4,6 +4,7 @@ import {
   fetchDesignerSubmission,
   submitClothCard,
   recheckSubmission,
+  reuploadClothCard,
   sendToFtc,
   fetchMessages,
   postMessage,
@@ -39,6 +40,7 @@ export default function DesignerDesk({ currentUser }) {
   const [busy,        setBusy]        = useState("");
   const [error,       setError]       = useState("");
   const fileRef = useRef(null);
+  const reuploadRef = useRef(null);
 
   useEffect(() => { loadList(); }, []);
 
@@ -97,6 +99,23 @@ export default function DesignerDesk({ currentUser }) {
     }
   }
 
+  async function handleReupload(e) {
+    const f = e.target.files?.[0];
+    if (!selected || !f) return;
+    setBusy("reupload");
+    setError("");
+    try {
+      const data = await reuploadClothCard(selected.id, f);
+      setSelected(data.submission);
+      await loadList();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy("");
+      if (reuploadRef.current) reuploadRef.current.value = "";
+    }
+  }
+
   async function handleSend() {
     if (!selected) return;
     setBusy("send");
@@ -127,8 +146,11 @@ export default function DesignerDesk({ currentUser }) {
     }
   }
 
-  const canSend = selected && ["ready", "needs_revision"].includes(selected.status);
   const report  = selected?.check_result || {};
+  const gate = report.gate || "UNKNOWN";
+  const isEditable = selected && ["draft", "needs_revision"].includes(selected.status);
+  const canSend = selected && selected.status === "ready" && gate === "PASS";
+  const canReupload = selected && gate !== "PASS" && isEditable;
 
   return (
     <div className="designer-desk">
@@ -189,7 +211,8 @@ export default function DesignerDesk({ currentUser }) {
                   <button
                     className="btn btn-secondary btn-sm"
                     onClick={handleRecheck}
-                    disabled={busy === "recheck"}
+                    disabled={!isEditable || busy === "recheck"}
+                    title={!isEditable ? `Cannot recheck from status: ${selected.status}` : ""}
                   >
                     {busy === "recheck" ? "Rechecking…" : "Recheck"}
                   </button>
@@ -197,7 +220,7 @@ export default function DesignerDesk({ currentUser }) {
                     className="btn btn-primary btn-sm"
                     onClick={handleSend}
                     disabled={!canSend || busy === "send"}
-                    title={!canSend ? `Cannot send from status: ${selected.status}` : ""}
+                    title={!canSend ? "Only PASS cards can be sent to FTC" : ""}
                   >
                     {busy === "send" ? "Sending…" : "Send to FTC"}
                   </button>
@@ -208,6 +231,29 @@ export default function DesignerDesk({ currentUser }) {
                 <GateBadge gate={report.gate} />
                 <StatusBadge status={selected.status} />
               </div>
+
+              {canReupload && (
+                <div className="reupload-panel">
+                  <div>
+                    <strong>Corrected card required</strong>
+                    <p>This card must PASS before it can be sent to FTC. Upload the corrected .txt card here.</p>
+                  </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => reuploadRef.current?.click()}
+                    disabled={busy === "reupload"}
+                  >
+                    {busy === "reupload" ? "Uploadingâ€¦" : "Re-upload Corrected Card"}
+                  </button>
+                  <input
+                    ref={reuploadRef}
+                    type="file"
+                    accept=".txt"
+                    style={{ display: "none" }}
+                    onChange={handleReupload}
+                  />
+                </div>
+              )}
 
               {canSend && (
                 <div className="detail-note">

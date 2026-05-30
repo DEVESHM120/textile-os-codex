@@ -103,6 +103,12 @@ export async function recheckSubmission(subId) {
   return request(`/api/designer/recheck/${subId}`, { method: "POST" });
 }
 
+export async function reuploadClothCard(subId, file) {
+  const form = new FormData();
+  form.append("file", file);
+  return request(`/api/designer/reupload/${subId}`, { method: "POST", body: form });
+}
+
 export async function sendToFtc(subId, note) {
   return request(`/api/designer/send/${subId}`, {
     method: "POST",

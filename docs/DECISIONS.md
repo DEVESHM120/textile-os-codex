@@ -26,3 +26,15 @@
 - Added live CSS-variable controls for template, density, navigation, radius, shadow, font scale, table density, issue display, raw-card width, sticker preview, and accent color.
 - Stored UI lock settings in browser `localStorage` under `textile-ui-config-v1`; final source-token locking will happen after visual approval.
 - Added static preview workspaces for Designer Desk, FTC Inbox, and Sticker Agent so workflow UX can be reviewed before backend workflow rebuild.
+
+## 2026-05-31
+
+- Fixed feasibility parsing around the actual textile cloth-card row format instead of treating every line as one `key: value` pair.
+- Added support for multi-column cloth-card labels such as `Gry.EndPik`, `Fin.EndPik`, `GMS/SQ.MT`, `FAB COMP`, `R.SPC(IN)`, `SLVG ENDS`, `WEAVE NO`, and `LOOM TYPE`.
+- Chose to parse engineered warping-section totals from the raw card so body ends, selvedge ends, total ends, and repeat metadata stay aligned with the uploaded source.
+- Reclassified repeat-boundary and pattern-balance checks as informational review notes because engineered selvedge/repeat layouts can be valid production cards.
+- Kept deterministic feasibility rules as the gate, but stopped calculated/missing theoretical GSM from creating warnings unless an explicit theoretical GSM value is provided.
+- Changed data-completeness parser warnings to keep submissions in `draft` instead of marking them `ready`.
+- Corrected the sanitized sample cloth card from `Mid Wt` to `Top Wt` so the sample represents a clean known-good card.
+- Aligned Designer Desk gate behavior with the Fabric Feasibility MVP flow, with a stricter hackathon rule: only `PASS` cards can become `ready` and be sent to FTC.
+- Added same-submission corrected-card reupload behavior from the Fabric Feasibility MVP so non-pass cards stay editable instead of creating a separate submission.

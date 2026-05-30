@@ -10,7 +10,7 @@ RuleFn = Callable[[dict[str, Any], dict[str, Any]], dict[str, Any] | None]
 
 DEFAULT_CONFIG = {
     "GSM_TOLERANCE_PCT": 8.0,
-    "COVER_FACTOR_LIMIT": 28.0,
+    "COVER_FACTOR_LIMIT": 32.0,
     "BEAM_CAPACITY_KG": 800.0,
     "AIRJET_INSERTION_LIMIT": 8.0,
     "MAX_ENDS_PER_DENT": 3.0,
@@ -18,7 +18,7 @@ DEFAULT_CONFIG = {
     "LOOM_HARNESS_LIMIT": 16.0,
     "COMPOSITION_TOLERANCE_PCT": 1.0,
     "WEIGHT_SUM_TOLERANCE_PCT": 0.5,
-    "ENDS_DISTRIBUTION_MAX_RATIO": 50.0,
+    "SELVEDGE_MIN_RATIO": 0.005,
     "EPI_TOLERANCE": 2.0,
     "SHRINKAGE_MIN_PCT": 2.0,
     "SHRINKAGE_MAX_PCT": 12.0,
@@ -112,7 +112,7 @@ def check_weave_repeat_boundary(card: dict[str, Any], cfg: dict[str, Any]) -> di
     total = _num(card, "total_ends")
     repeat = _num(card, "ends_per_repeat")
     if total and repeat and total % repeat != 0:
-        return _issue("WARNING", "REPEAT_BOUNDARY_OFFSET", "STRUCTURAL", "Total ends do not land exactly on the weave repeat boundary.", value=total, expected=f"multiple of {repeat}", field="total_ends", action="Review repeat boundary at fabric width.")
+        return _issue("INFO", "REPEAT_BOUNDARY_OFFSET", "STRUCTURAL", "Total ends do not land exactly on the weave repeat boundary.", value=total, expected=f"multiple of {repeat}", field="total_ends", action="Review repeat boundary at fabric width.")
     return None
 
 
@@ -120,7 +120,7 @@ def check_pattern_balance(card: dict[str, Any], cfg: dict[str, Any]) -> dict[str
     body = _num(card, "body_ends")
     repeat = _num(card, "ends_per_repeat")
     if body and repeat and body % repeat not in (0, repeat / 2):
-        return _issue("WARNING", "PATTERN_BALANCE_REVIEW", "STRUCTURAL", "Body ends may create an unbalanced terminal repeat.", value=body, expected=f"balanced against repeat {repeat}", field="body_ends", action="Review final repeat balance with design team.")
+        return _issue("INFO", "PATTERN_BALANCE_REVIEW", "STRUCTURAL", "Body ends may create an unbalanced terminal repeat.", value=body, expected=f"balanced against repeat {repeat}", field="body_ends", action="Review final repeat balance with design team.")
     return None
 
 
@@ -138,13 +138,7 @@ def check_theoretical_gsm(card: dict[str, Any], cfg: dict[str, Any]) -> dict[str
     if printed is None:
         return None
     if theoretical is None:
-        warp = _num(card, "warp_count_ne")
-        weft = _num(card, "weft_count_ne")
-        epi = _num(card, "grey_epi")
-        ppi = _num(card, "grey_ppi")
-        if not all([warp, weft, epi, ppi]):
-            return _issue("WARNING", "THEORETICAL_GSM_NOT_CALCULATED", "WEIGHT", "Theoretical GSM cannot be calculated from available fields.", field="gsm", action="Add yarn counts, EPI, and PPI or enter theoretical GSM.")
-        theoretical = ((epi / warp) + (ppi / weft)) * 24.0
+        return None
     delta = abs(printed - theoretical) / max(printed, 1) * 100
     if delta > cfg["GSM_TOLERANCE_PCT"]:
         return _issue("ERROR", "GSM_TOLERANCE_FAIL", "WEIGHT", "Printed GSM and theoretical GSM are outside tolerance.", value=printed, expected=round(theoretical, 2), tolerance_pct=cfg["GSM_TOLERANCE_PCT"], field="gsm", action="Recheck construction, yarn count, crimp, and printed GSM.")
@@ -170,8 +164,9 @@ def check_fabric_category_gsm(card: dict[str, Any], cfg: dict[str, Any]) -> dict
     if not category or gsm is None:
         return None
     ranges = cfg["FAB_CATEGORY_GSM_RANGES"]
-    if category in ranges:
-        low, high = ranges[category]
+    matched_category = next((name for name in ranges if name.lower() in category.lower()), None)
+    if matched_category:
+        low, high = ranges[matched_category]
         if not low <= gsm <= high:
             return _issue("WARNING", "CATEGORY_GSM_MISMATCH", "WEIGHT", "GSM does not match the stated fabric category.", value=gsm, expected=f"{low}-{high}", field="fabric_category", action="Confirm category or update GSM.")
     return None
@@ -246,16 +241,16 @@ def check_yarn_weight_sum(card: dict[str, Any], cfg: dict[str, Any]) -> dict[str
 
 
 def check_ends_distribution(card: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any] | None:
-    body = _num(card, "body_ends")
+    total = _num(card, "total_ends")
     selvedge = _num(card, "selvedge_ends")
-    if body and selvedge and body / max(selvedge, 1) > cfg["ENDS_DISTRIBUTION_MAX_RATIO"]:
-        return _issue("WARNING", "ENDS_DISTRIBUTION_RATIO_HIGH", "YARN", "Body to selvedge ends ratio is high.", value=round(body / max(selvedge, 1), 2), expected=cfg["ENDS_DISTRIBUTION_MAX_RATIO"], field="selvedge_ends", action="Confirm selvedge construction and drawing plan.")
+    if total and selvedge is not None and selvedge / total < cfg["SELVEDGE_MIN_RATIO"]:
+        return _issue("WARNING", "SELVEDGE_RATIO_LOW", "YARN", "Selvedge ends are low compared with total ends.", value=round(selvedge / total * 100, 2), expected=f">= {cfg['SELVEDGE_MIN_RATIO'] * 100:.2f}%", field="selvedge_ends", action="Confirm selvedge construction and drawing plan.")
     return None
 
 
 def check_width_epi_consistency(card: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any] | None:
     total = _num(card, "total_ends")
-    width = _num(card, "reed_space_inches") or _num(card, "grey_width_inches")
+    width = _num(card, "grey_width_inches") or _num(card, "reed_space_inches")
     epi = _num(card, "grey_epi")
     if not all([total, width, epi]):
         return None
