@@ -34,4 +34,7 @@
 - Compared the combined app against the original Fabric Feasibility MVP and ported the missing corrected-card reupload flow into the Designer Desk.
 - Tightened FTC send gating so `WARNING` and `ERROR` cards remain `draft`; designers can only send `PASS` cards to FTC.
 - Added browser-visible reupload controls for non-pass editable submissions and refreshed local runtime warning submissions from `ready` to `draft`.
+- Investigated refresh logout/user-switch behavior and traced it to `SameSite=None; Secure` cookies on local HTTP plus a shared `ff_auth` cookie name across localhost apps.
+- Updated auth routes and decorators to use the app-specific `textile_os_auth` cookie, clear the legacy `ff_auth` cookie on login/logout, and choose local-safe cookie attributes in development.
+- Browser-verified that logging in as `designer1` survives a refresh on `http://localhost:5173/` and remains on Designer Desk as `Design Team · designer`.
 - Next work: capture polished screenshots and record the demo walkthrough video.

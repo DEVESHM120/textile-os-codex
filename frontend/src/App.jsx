@@ -17,6 +17,8 @@ import LabelStudio from "./pages/LabelStudio.jsx";
 import Login from "./pages/Login.jsx";
 import DesignerDesk from "./pages/DesignerDesk.jsx";
 import FtcInbox from "./pages/FtcInbox.jsx";
+import Certificate from "./pages/Certificate.jsx";
+import VerifyPage from "./pages/VerifyPage.jsx";
 
 const navItems = [
   { id: "designer", label: "Designer Desk", icon: ClipboardCheck, roles: ["designer", "admin"] },
@@ -24,7 +26,15 @@ const navItems = [
   { id: "sticker",  label: "Sticker Agent", icon: Sticker,        roles: null },
 ];
 
+// Detect public /verify/<id> route from URL
+function getVerifyId() {
+  const m = window.location.pathname.match(/^\/verify\/(.+)/);
+  return m ? m[1] : null;
+}
+
 export default function App() {
+  const verifyId = useMemo(getVerifyId, []);
+
   const [currentUser,     setCurrentUser]     = useState(null);
   const [authChecked,     setAuthChecked]     = useState(false);
   const [view,            setView]            = useState("designer");
@@ -32,6 +42,12 @@ export default function App() {
   const [bulkArtifact,    setBulkArtifact]    = useState(null);
   const [convertArtifact, setConvertArtifact] = useState(null);
   const [busy,            setBusy]            = useState("");
+  const [certSubId,       setCertSubId]       = useState(null);
+
+  // Public verify page — no auth needed
+  if (verifyId) {
+    return <VerifyPage approvalId={verifyId} />;
+  }
 
   useEffect(() => {
     fetchMe()
@@ -112,6 +128,16 @@ export default function App() {
     );
   }
 
+  // Certificate overlay — full screen, replaces main content
+  if (certSubId) {
+    return (
+      <Certificate
+        subId={certSubId}
+        onBack={() => setCertSubId(null)}
+      />
+    );
+  }
+
   return (
     <div
       className={`app-shell nav-${uiConfig.navigation} template-${uiConfig.template} density-${uiConfig.density} issue-mode-${uiConfig.issueDisplay}`}
@@ -151,9 +177,13 @@ export default function App() {
           </div>
         </header>
 
-        {view === "designer" && <DesignerDesk currentUser={currentUser} />}
+        {view === "designer" && (
+          <DesignerDesk currentUser={currentUser} onViewCert={setCertSubId} />
+        )}
 
-        {view === "ftc" && <FtcInbox currentUser={currentUser} />}
+        {view === "ftc" && (
+          <FtcInbox currentUser={currentUser} onViewCert={setCertSubId} />
+        )}
 
         {view === "sticker" && (
           <LabelStudio

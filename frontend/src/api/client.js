@@ -162,6 +162,28 @@ export async function postMessage(subId, body, fieldRef) {
   });
 }
 
+// ── Attachments ───────────────────────────────────────────────────────────────
+
+export async function uploadAttachment(subId, file) {
+  const form = new FormData();
+  form.append("file", file);
+  return request(`/api/designer/attach/${subId}`, { method: "POST", body: form });
+}
+
+export function attachmentUrl(subId, filename) {
+  return `${API_BASE}/api/uploads/${subId}/${filename}`;
+}
+
+// ── Certificate / Verify ──────────────────────────────────────────────────────
+
+export async function fetchCertificate(subId) {
+  return request(`/api/submissions/${subId}/certificate`);
+}
+
+export async function fetchVerify(approvalId) {
+  return request(`/api/verify/${approvalId}`);
+}
+
 // ── Sticker Convert ───────────────────────────────────────────────────────────
 
 export async function convertBuyerFile({ convertFile, sheetName }) {

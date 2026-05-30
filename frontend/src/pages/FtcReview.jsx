@@ -5,6 +5,7 @@ import {
   postFtcFeedback,
   approveFtcSubmission,
   postMessage,
+  attachmentUrl,
 } from "../api/client.js";
 import GateBadge from "../components/GateBadge.jsx";
 import IssueList from "../components/IssueList.jsx";
@@ -17,12 +18,29 @@ const STATUS_LABEL = {
   approved:       "Approved",
 };
 
-export default function FtcReview({ subId, currentUser, onDone }) {
+const FIELD_LABELS = {
+  card_ref: "Card Reference", weave: "Weave", count_raw: "Count (Warp×Weft)",
+  warp_count: "Warp Count", weft_count: "Weft Count", grey_epi: "Grey EPI",
+  fin_epi: "Finished EPI", grey_ppi: "Grey PPI", fin_ppi: "Finished PPI",
+  gsm: "GSM", reed: "Reed", reed_count: "Reed Count", grey_width_inches: "Grey Width (in)",
+  fin_width_inches: "Finished Width (in)", body_ends: "Body Ends", total_ends: "Total Ends",
+  fabric_composition: "Composition", loom_type: "Loom Type", customer: "Customer",
+  season: "Season", pattern: "Pattern", shaft_count: "Shaft Count",
+  selvedge_ends: "Selvedge Ends", category: "Category", date: "Date",
+};
+
+function fieldLabel(key) {
+  return FIELD_LABELS[key] || key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+export default function FtcReview({ subId, currentUser, onDone, onViewCert }) {
   const [sub,          setSub]          = useState(null);
   const [messages,     setMessages]     = useState([]);
   const [feedbackBody, setFeedbackBody] = useState("");
   const [approveNotes, setApproveNotes] = useState("");
   const [msgBody,      setMsgBody]      = useState("");
+  const [activeField,  setActiveField]  = useState(null);
+  const [cardView,     setCardView]     = useState("raw");
   const [busy,         setBusy]         = useState("");
   const [error,        setError]        = useState("");
 
@@ -53,8 +71,9 @@ export default function FtcReview({ subId, currentUser, onDone }) {
     setBusy("feedback");
     setError("");
     try {
-      await postFtcFeedback(subId, feedbackBody.trim());
+      await postFtcFeedback(subId, feedbackBody.trim(), activeField?.key);
       setFeedbackBody("");
+      setActiveField(null);
       await loadSub();
       onDone?.();
     } catch (e) {
@@ -82,19 +101,27 @@ export default function FtcReview({ subId, currentUser, onDone }) {
     e.preventDefault();
     if (!msgBody.trim()) return;
     try {
-      await postMessage(subId, msgBody.trim());
+      await postMessage(subId, msgBody.trim(), activeField?.key);
       const msgs = await fetchMessages(subId);
       setMessages(msgs);
       setMsgBody("");
+      setActiveField(null);
     } catch (e) {
       setError(e.message);
     }
   }
 
+  function handleFieldClick(key) {
+    setActiveField(prev => prev?.key === key ? null : { key, label: fieldLabel(key) });
+  }
+
   if (busy === "loading") return <div className="review-loading">Loading submission…</div>;
   if (!sub) return <div className="review-loading">Select a submission.</div>;
 
-  const report = sub.check_result || {};
+  const report        = sub.check_result || {};
+  const parsed        = sub.card_parsed || {};
+  const files         = sub.files || [];
+  const commentedKeys = new Set(messages.map(m => m.field_ref).filter(Boolean));
 
   return (
     <div className="ftc-review">
@@ -110,13 +137,59 @@ export default function FtcReview({ subId, currentUser, onDone }) {
       </div>
 
       <div className="review-panels">
-        {/* Left — raw card */}
+        {/* Left — card view */}
         <div className="review-raw">
-          <h4>Raw Cloth Card</h4>
-          <pre className="raw-card">{sub.card_raw_text}</pre>
+          <div className="card-view-toolbar">
+            <h4 style={{ margin: 0 }}>Cloth Card</h4>
+            <div className="segmented">
+              <button className={cardView === "raw" ? "active" : ""} onClick={() => setCardView("raw")}>Raw</button>
+              <button className={cardView === "parsed" ? "active" : ""} onClick={() => setCardView("parsed")}>Parsed Fields</button>
+            </div>
+          </div>
+
+          {cardView === "raw" ? (
+            <pre className="raw-card" style={{ marginTop: 10 }}>{sub.card_raw_text}</pre>
+          ) : (
+            <div className="parsed-table" style={{ marginTop: 10 }}>
+              {Object.entries(parsed)
+                .filter(([, v]) => v !== null && v !== undefined && v !== "")
+                .map(([key, val]) => (
+                  <div
+                    key={key}
+                    className={`parsed-row parsed-row-clickable ${activeField?.key === key ? "parsed-row-active" : ""} ${commentedKeys.has(key) ? "parsed-row-commented" : ""}`}
+                    onClick={() => handleFieldClick(key)}
+                    title="Click to tag this field in your next message"
+                  >
+                    <span>{fieldLabel(key)}{commentedKeys.has(key) && <span className="comment-dot" title="Has comments"> ●</span>}</span>
+                    <strong>{String(val)}</strong>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Attachments */}
+          {files.length > 0 && (
+            <div className="attachments-section" style={{ marginTop: 14 }}>
+              <span className="section-label">Designer Attachments</span>
+              <div className="attachment-list">
+                {files.map(f => (
+                  <a
+                    key={f.id}
+                    href={attachmentUrl(sub.id, f.filename)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="attachment-item"
+                  >
+                    <span className="attachment-icon">{f.mime_type?.startsWith("image/") ? "🖼" : "📄"}</span>
+                    <span className="attachment-name">{f.original_name}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right — issues + actions */}
+        {/* Right — checks + actions */}
         <div className="review-checks">
           <h4>Check Results</h4>
           <p className="check-summary">
@@ -142,14 +215,23 @@ export default function FtcReview({ subId, currentUser, onDone }) {
                 <span className="message-avatar">{m.sender_name[0]}</span>
                 <div className="message-body">
                   <span className="message-sender">{m.sender_name}</span>
+                  {m.field_ref && <span className="field-tag-badge">{fieldLabel(m.field_ref)}</span>}
                   <p>{m.body}</p>
                 </div>
               </div>
             ))}
+
+            {activeField && (
+              <div className="field-tag-active">
+                Tagging: <strong>{activeField.label}</strong>
+                <button className="clear-tag-btn" onClick={() => setActiveField(null)}>✕</button>
+              </div>
+            )}
+
             <form className="message-compose" onSubmit={handleSendMsg}>
               <input
                 type="text"
-                placeholder="Message designer…"
+                placeholder={activeField ? `Comment on ${activeField.label}…` : "Message designer…"}
                 value={msgBody}
                 onChange={e => setMsgBody(e.target.value)}
               />
@@ -164,6 +246,12 @@ export default function FtcReview({ subId, currentUser, onDone }) {
             <div className="ftc-actions">
               <div className="ftc-action-section">
                 <h4>Request Revision</h4>
+                {activeField && (
+                  <div className="field-tag-active">
+                    Tagging: <strong>{activeField.label}</strong>
+                    <button className="clear-tag-btn" onClick={() => setActiveField(null)}>✕</button>
+                  </div>
+                )}
                 <form onSubmit={handleFeedback}>
                   <textarea
                     placeholder="Describe what needs to be corrected…"
@@ -206,7 +294,10 @@ export default function FtcReview({ subId, currentUser, onDone }) {
           {sub.status === "approved" && sub.approval && (
             <div className="approval-badge">
               ✓ Approved by {sub.approval.ftc_member_name}
-              <span className="approval-id">ID: {sub.approval.approval_id?.slice(0, 8)}</span>
+              <span className="approval-id">ID: {sub.approval.approval_id?.slice(0, 8).toUpperCase()}</span>
+              <button className="btn btn-secondary btn-sm" onClick={() => onViewCert?.(sub.id)}>
+                Print Certificate
+              </button>
             </div>
           )}
         </div>

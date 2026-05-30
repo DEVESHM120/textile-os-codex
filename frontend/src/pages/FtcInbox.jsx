@@ -26,7 +26,7 @@ function timeAgo(iso) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export default function FtcInbox({ currentUser }) {
+export default function FtcInbox({ currentUser, onViewCert }) {
   const [tab,        setTab]        = useState("pending");
   const [rows,       setRows]       = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -106,6 +106,7 @@ export default function FtcInbox({ currentUser }) {
               subId={selectedId}
               currentUser={currentUser}
               onDone={() => loadTab(tab)}
+              onViewCert={onViewCert}
             />
           ) : (
             <div className="detail-empty">Click a submission to review it.</div>

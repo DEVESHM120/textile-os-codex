@@ -38,6 +38,9 @@ Updated: 2026-05-31
 - Tightened Designer Desk/FTC gating so only `PASS` cards can be marked `ready` and sent to FTC; `WARNING` and `ERROR` cards remain editable drafts.
 - Added tests and UI for reuploading a corrected `.txt` into the same submission, then moving it to `ready` after the corrected card passes.
 - Browser-verified warning cards show `Draft`, disabled `Send to FTC`, and visible `Re-upload Corrected Card` action.
+- Fixed refresh logout/user-switch root cause by replacing the shared `ff_auth` localhost cookie with app-specific `textile_os_auth` and local-safe cookie flags.
+- Added auth cookie regression tests for local cookie attributes, legacy cookie isolation, and `/api/auth/me` persistence.
+- Browser-verified the fixed auth cookie keeps `designer1` logged in after refreshing `http://localhost:5173/`.
 
 ## In Progress
 

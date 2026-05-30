@@ -38,3 +38,5 @@
 - Corrected the sanitized sample cloth card from `Mid Wt` to `Top Wt` so the sample represents a clean known-good card.
 - Aligned Designer Desk gate behavior with the Fabric Feasibility MVP flow, with a stricter hackathon rule: only `PASS` cards can become `ready` and be sent to FTC.
 - Added same-submission corrected-card reupload behavior from the Fabric Feasibility MVP so non-pass cards stay editable instead of creating a separate submission.
+- Namespaced the auth cookie as `textile_os_auth` instead of the shared `ff_auth` name so other localhost Fabric Feasibility sessions cannot overwrite this app's user.
+- Made auth cookie flags environment-aware: local development uses `SameSite=Lax` without `Secure` through the Vite proxy, while production can opt into `SameSite=None` and `Secure`.

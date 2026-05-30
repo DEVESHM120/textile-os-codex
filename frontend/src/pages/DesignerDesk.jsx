@@ -8,6 +8,8 @@ import {
   sendToFtc,
   fetchMessages,
   postMessage,
+  uploadAttachment,
+  attachmentUrl,
 } from "../api/client.js";
 import GateBadge from "../components/GateBadge.jsx";
 import IssueList from "../components/IssueList.jsx";
@@ -31,7 +33,7 @@ function StatusBadge({ status }) {
   return <span className={`status-badge ${cls}`}>{STATUS_LABEL[status] || status}</span>;
 }
 
-export default function DesignerDesk({ currentUser }) {
+export default function DesignerDesk({ currentUser, onViewCert }) {
   const [submissions, setSubmissions] = useState([]);
   const [selected,    setSelected]    = useState(null);
   const [messages,    setMessages]    = useState([]);
@@ -39,8 +41,9 @@ export default function DesignerDesk({ currentUser }) {
   const [note,        setNote]        = useState("");
   const [busy,        setBusy]        = useState("");
   const [error,       setError]       = useState("");
-  const fileRef = useRef(null);
+  const fileRef     = useRef(null);
   const reuploadRef = useRef(null);
+  const attachRef   = useRef(null);
 
   useEffect(() => { loadList(); }, []);
 
@@ -56,8 +59,8 @@ export default function DesignerDesk({ currentUser }) {
   async function selectSub(sub) {
     setBusy("loading");
     try {
-      const data  = await fetchDesignerSubmission(sub.id);
-      const msgs  = await fetchMessages(sub.id);
+      const data = await fetchDesignerSubmission(sub.id);
+      const msgs = await fetchMessages(sub.id);
       setSelected(data);
       setMessages(msgs);
     } catch (e) {
@@ -146,11 +149,31 @@ export default function DesignerDesk({ currentUser }) {
     }
   }
 
-  const report  = selected?.check_result || {};
-  const gate = report.gate || "UNKNOWN";
+  async function handleAttach(e) {
+    const f = e.target.files?.[0];
+    if (!selected || !f) return;
+    setBusy("attach");
+    setError("");
+    try {
+      const data = await uploadAttachment(selected.id, f);
+      setSelected(prev => ({
+        ...prev,
+        files: [...(prev.files || []), data.file],
+      }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy("");
+      if (attachRef.current) attachRef.current.value = "";
+    }
+  }
+
+  const report     = selected?.check_result || {};
+  const gate       = report.gate || "UNKNOWN";
   const isEditable = selected && ["draft", "needs_revision"].includes(selected.status);
-  const canSend = selected && selected.status === "ready" && gate === "PASS";
+  const canSend    = selected && selected.status === "ready" && gate === "PASS";
   const canReupload = selected && gate !== "PASS" && isEditable;
+  const files      = selected?.files || [];
 
   return (
     <div className="designer-desk">
@@ -168,13 +191,7 @@ export default function DesignerDesk({ currentUser }) {
             >
               {busy === "submit" ? "Uploading…" : "+ Upload Card"}
             </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".txt"
-              style={{ display: "none" }}
-              onChange={handleUpload}
-            />
+            <input ref={fileRef} type="file" accept=".txt" style={{ display: "none" }} onChange={handleUpload} />
           </div>
 
           {submissions.length === 0 && (
@@ -212,7 +229,6 @@ export default function DesignerDesk({ currentUser }) {
                     className="btn btn-secondary btn-sm"
                     onClick={handleRecheck}
                     disabled={!isEditable || busy === "recheck"}
-                    title={!isEditable ? `Cannot recheck from status: ${selected.status}` : ""}
                   >
                     {busy === "recheck" ? "Rechecking…" : "Recheck"}
                   </button>
@@ -232,6 +248,16 @@ export default function DesignerDesk({ currentUser }) {
                 <StatusBadge status={selected.status} />
               </div>
 
+              {/* Approved banner */}
+              {selected.status === "approved" && (
+                <div className="approval-banner">
+                  <span>✓ Approved</span>
+                  <button className="btn btn-secondary btn-sm" onClick={() => onViewCert?.(selected.id)}>
+                    Print Certificate
+                  </button>
+                </div>
+              )}
+
               {canReupload && (
                 <div className="reupload-panel">
                   <div>
@@ -243,15 +269,9 @@ export default function DesignerDesk({ currentUser }) {
                     onClick={() => reuploadRef.current?.click()}
                     disabled={busy === "reupload"}
                   >
-                    {busy === "reupload" ? "Uploadingâ€¦" : "Re-upload Corrected Card"}
+                    {busy === "reupload" ? "Uploading…" : "Re-upload Corrected Card"}
                   </button>
-                  <input
-                    ref={reuploadRef}
-                    type="file"
-                    accept=".txt"
-                    style={{ display: "none" }}
-                    onChange={handleReupload}
-                  />
+                  <input ref={reuploadRef} type="file" accept=".txt" style={{ display: "none" }} onChange={handleReupload} />
                 </div>
               )}
 
@@ -280,17 +300,55 @@ export default function DesignerDesk({ currentUser }) {
                 <IssueList title="Warnings" issues={report.warnings} severity="warning" />
               )}
 
+              {/* Attachments */}
+              <div className="attachments-section">
+                <div className="attachments-header">
+                  <span className="section-label">Attachments</span>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => attachRef.current?.click()}
+                    disabled={busy === "attach"}
+                  >
+                    {busy === "attach" ? "Uploading…" : "+ Add File"}
+                  </button>
+                  <input
+                    ref={attachRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.pdf"
+                    style={{ display: "none" }}
+                    onChange={handleAttach}
+                  />
+                </div>
+                {files.length === 0 ? (
+                  <p className="empty-hint" style={{ padding: "8px 0" }}>No attachments yet.</p>
+                ) : (
+                  <div className="attachment-list">
+                    {files.map(f => (
+                      <a
+                        key={f.id}
+                        href={attachmentUrl(selected.id, f.filename)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="attachment-item"
+                      >
+                        <span className="attachment-icon">{f.mime_type?.startsWith("image/") ? "🖼" : "📄"}</span>
+                        <span className="attachment-name">{f.original_name}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Messages */}
               <div className="message-thread">
                 <h4>FTC Thread</h4>
-                {messages.length === 0 && (
-                  <p className="empty-hint">No messages yet.</p>
-                )}
+                {messages.length === 0 && <p className="empty-hint">No messages yet.</p>}
                 {messages.map((m) => (
                   <div key={m.id} className={`message-row ${m.sender_role}`}>
                     <span className="message-avatar">{m.sender_name[0]}</span>
                     <div className="message-body">
                       <span className="message-sender">{m.sender_name}</span>
+                      {m.field_ref && <span className="field-tag-badge">{m.field_ref.replace(/_/g, " ")}</span>}
                       <p>{m.body}</p>
                     </div>
                   </div>

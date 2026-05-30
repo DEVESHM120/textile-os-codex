@@ -28,6 +28,8 @@ Passed for the MVP build.
 - FTC send gate parity: backend tests verify warning cards remain `draft` and cannot be sent to FTC.
 - Corrected-card reupload parity: backend tests verify a designer can reupload a corrected `.txt` into the same submission and move it to `ready` only after it returns `PASS`.
 - Browser parity check: Designer Desk shows warning cards as `Draft`, disables `Send to FTC`, and displays the `Re-upload Corrected Card` button.
+- Auth cookie regression: backend tests verify local login sets `textile_os_auth` with `SameSite=Lax` and no `Secure`, clears legacy `ff_auth`, ignores legacy cookies on `/api/auth/me`, and persists the configured cookie across `/api/auth/me`.
+- Auth browser refresh check: after backend restart, logging in as `designer1` on `http://localhost:5173/` stayed on Designer Desk as `Design Team · designer` after refresh.
 
 Browser verification found a sample-card API path issue; the route was fixed and a regression test was added.
 

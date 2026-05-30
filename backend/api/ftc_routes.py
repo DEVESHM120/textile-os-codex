@@ -9,8 +9,10 @@ import hashlib
 import hmac
 import os
 import uuid
+from pathlib import Path
 
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request, send_file
+from werkzeug.utils import secure_filename
 
 from api.auth_decorators import login_required, role_required
 from api.utils import extract_text_payload
@@ -24,7 +26,9 @@ from db import (
     get_submission,
     list_all_submissions_for_ftc,
     list_designer_submissions,
+    list_files,
     list_ftc_inbox,
+    save_file,
     update_submission_check,
     update_submission_source_and_check,
     update_submission_status,
@@ -148,7 +152,35 @@ def api_designer_get(sub_id: int):
         return jsonify({"error": "Not found"}), 404
     if sub["designer_id"] != g.user["user_id"] and g.user["role"] != "admin":
         return jsonify({"error": "Access denied"}), 403
+    sub["files"] = list_files(_db(), sub_id)
     return jsonify(sub)
+
+
+_ALLOWED_ATTACH_EXTS = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".pdf": "application/pdf"}
+
+
+@designer_bp.post("/api/designer/attach/<int:sub_id>")
+@role_required("designer", "admin")
+def api_designer_attach(sub_id: int):
+    sub = get_submission(_db(), sub_id)
+    if not sub:
+        return jsonify({"error": "Not found"}), 404
+    if sub["designer_id"] != g.user["user_id"] and g.user["role"] != "admin":
+        return jsonify({"error": "Access denied"}), 403
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    upload = request.files["file"]
+    ext = Path(upload.filename or "").suffix.lower()
+    mime = _ALLOWED_ATTACH_EXTS.get(ext)
+    if not mime:
+        return jsonify({"error": "Only JPG, PNG, WebP and PDF files accepted"}), 400
+    uid = uuid.uuid4().hex
+    safe_name = f"{uid}{ext}"
+    sub_dir = current_app.config["UPLOADS_DIR"] / str(sub_id)
+    sub_dir.mkdir(parents=True, exist_ok=True)
+    upload.save(str(sub_dir / safe_name))
+    file_id = save_file(_db(), sub_id, safe_name, secure_filename(upload.filename), mime, g.user["user_id"])
+    return jsonify({"ok": True, "file": {"id": file_id, "filename": safe_name, "original_name": upload.filename, "mime_type": mime}}), 201
 
 
 # ── FTC Routes ────────────────────────────────────────────────────────────────
@@ -175,6 +207,7 @@ def api_ftc_get(sub_id: int):
         return jsonify({"error": "Not found"}), 404
     approval = get_approval_for_submission(_db(), sub_id)
     sub["approval"] = approval
+    sub["files"] = list_files(_db(), sub_id)
     return jsonify(sub)
 
 
@@ -262,6 +295,20 @@ def api_post_message(sub_id: int):
 
     msg_id = add_message(_db(), sub_id, g.user["user_id"], g.user["display_name"], g.user["role"], body, field_ref)
     return jsonify({"ok": True, "message_id": msg_id}), 201
+
+
+# ── Uploads (authenticated) ───────────────────────────────────────────────────
+
+@msg_bp.get("/api/uploads/<int:sub_id>/<path:filename>")
+@login_required
+def api_serve_upload(sub_id: int, filename: str):
+    safe = secure_filename(filename)
+    path = current_app.config["UPLOADS_DIR"] / str(sub_id) / safe
+    if not path.exists():
+        return jsonify({"error": "File not found"}), 404
+    ext = path.suffix.lower()
+    mime = _ALLOWED_ATTACH_EXTS.get(ext, "application/octet-stream")
+    return send_file(path, mimetype=mime)
 
 
 # ── Public Routes (no auth) ───────────────────────────────────────────────────

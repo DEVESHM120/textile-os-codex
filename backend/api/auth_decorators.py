@@ -7,7 +7,7 @@ from flask import current_app, g, jsonify, request
 
 
 def _get_user():
-    token = request.cookies.get("ff_auth")
+    token = request.cookies.get(current_app.config.get("AUTH_COOKIE_NAME", "textile_os_auth"))
     return current_app.config["AUTH_MANAGER"].get_session(token)
 
 

@@ -61,8 +61,20 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     app.config["DB_PATH"]              = runtime_dir / "textile_workflow.db"
     app.config["MAX_CONTENT_LENGTH"]   = 25 * 1024 * 1024
     app.config["SECRET_KEY"]           = os.getenv("FF_SECRET_KEY", "dev-insecure-key-change-in-prod")
+    app.config["AUTH_COOKIE_NAME"]     = os.getenv("FF_AUTH_COOKIE_NAME", "textile_os_auth")
+    app.config["AUTH_COOKIE_SAMESITE"] = os.getenv("FF_AUTH_COOKIE_SAMESITE") or ("Lax" if os.getenv("FLASK_ENV") == "development" else "None")
+    _cookie_secure = os.getenv("FF_AUTH_COOKIE_SECURE")
+    app.config["AUTH_COOKIE_SECURE"]   = (
+        _cookie_secure.lower() in {"1", "true", "yes", "on"}
+        if _cookie_secure is not None
+        else os.getenv("FLASK_ENV") != "development"
+    )
+    app.config["LEGACY_AUTH_COOKIE_NAMES"] = ["ff_auth"]
     runtime_dir.mkdir(parents=True, exist_ok=True)
     ensure_artifact_dir(runtime_dir)
+    uploads_dir = runtime_dir / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    app.config["UPLOADS_DIR"] = uploads_dir
     templates_dir = runtime_dir / "templates"
     templates_dir.mkdir(parents=True, exist_ok=True)
     app.config["TEMPLATES_DIR"] = templates_dir
