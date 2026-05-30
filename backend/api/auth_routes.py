@@ -24,7 +24,7 @@ def api_login():
     response = make_response(jsonify({"user": user}))
     response.set_cookie(
         "ff_auth", token,
-        httponly=True, samesite="Lax",
+        httponly=True, samesite="None", secure=True,
         max_age=7 * 24 * 3600,
     )
     return response
