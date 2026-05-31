@@ -53,7 +53,7 @@ After approval, click **Print Certificate** in either the Designer Desk or FTC I
 ### Step 4 — Bulk Sticker Generation (Sticker Agent)
 
 1. Stay logged in, go to the **Sticker Agent** tab
-2. Under **Bulk Sticker Generation**, upload [master-fabric-list.xlsx](master-fabric-list.xlsx)
+2. Under **Bulk Sticker Generation**, upload [NPG Men Rupeshwar.xls](NPG%20Men%20Rupeshwar.xls)
 3. Click **Generate** — the app produces a formatted multi-sticker Excel file ready for production labelling
 
 ---
@@ -64,4 +64,4 @@ After approval, click **Print Certificate** in either the Designer Desk or FTC I
 |------|---------|-------------|
 | `cloth-cards/SA.0326.0030.txt` | Designer Desk | Real dobby cloth card — 100% Cotton, clean data |
 | `cloth-cards/SA.0226.0024-errors-demo.txt` | Designer Desk | Same dobby construction, intentional data issues to demo error detection |
-| `master-fabric-list.xlsx` | Sticker Agent | 5-row master list for bulk sticker output |
+| `NPG Men Rupeshwar.xls` | Sticker Agent | Real NPG menswear master fabric list for bulk sticker generation |
