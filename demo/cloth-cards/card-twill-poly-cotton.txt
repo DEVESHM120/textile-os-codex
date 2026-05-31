@@ -1,0 +1,37 @@
+Card Ref: DEMO-TWILL-003
+Customer: WorkWear Co
+Buyer: WorkWear Exports
+Season: AW25
+Pattern: 3/1 Twill
+Fabric Category: Mid Wt
+Construction: 20 Ne PC warp x 20 Ne PC weft, 96 x 56 twill weave
+Composition: 65% Polyester 35% Cotton
+Weave: Twill
+Weave Number: 302
+Loom Type: Rapier
+GSM: 200
+Theoretical GSM: 192
+Grey EPI: 96
+Finished EPI: 98
+Grey PPI: 56
+Finished PPI: 58
+Grey Width Inches: 67
+Finished Width Inches: 62
+Reed Count: 56
+Reed Space Inches: 68
+Body Ends: 6432
+Selvedge Ends: 80
+Total Ends: 6512
+Ends Per Repeat: 4
+Shaft Count: 4
+Warp Count Ne: 20
+Weft Count Ne: 20
+Warp Weight Percent: 60
+Weft Weight Percent: 40
+Pick Rate Meters Per Min: 5.5
+Finish Code: RF
+K1: HMM10W
+K2: W09001
+K3: C52001
+K4: HH03
+K5: RF

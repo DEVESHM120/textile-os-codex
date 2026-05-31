@@ -2,6 +2,19 @@
 
 AI-assisted textile product development workflow for mills, exporters, sourcing teams, and fashion brands.
 
+## Try It Live
+
+**Live app:** https://textile-os-codex.vercel.app
+
+**Demo files + step-by-step guide:** [demo/README.md](demo/README.md)
+
+| Login | Username | Password |
+|-------|----------|----------|
+| Designer | `designer1` | `designer123` |
+| FTC Reviewer | `ftc1` | `ftcmember123` |
+
+Quick test: log in as designer, upload any `.txt` file from [demo/cloth-cards/](demo/cloth-cards/), run the feasibility check, submit for FTC review, then switch to the FTC login and approve it.
+
 The MVP combines:
 
 - Fabric Feasibility Checker: parses cloth-card data and runs deterministic SOP-style checks.

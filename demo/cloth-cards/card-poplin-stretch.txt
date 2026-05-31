@@ -1,0 +1,37 @@
+Card Ref: DEMO-POPLIN-004
+Customer: Luxe Apparel
+Buyer: Luxe Fashion Group
+Season: SS25
+Pattern: Plain
+Fabric Category: Light Wt
+Construction: 80 Ne cotton/elastane warp x 80 Ne cotton weft, 160 x 90 plain weave
+Composition: 97% Cotton 3% Elastane
+Weave: Plain
+Weave Number: 101
+Loom Type: Airjet
+GSM: 95
+Theoretical GSM: 90
+Grey EPI: 160
+Finished EPI: 166
+Grey PPI: 90
+Finished PPI: 96
+Grey Width Inches: 64
+Finished Width Inches: 58
+Reed Count: 90
+Reed Space Inches: 65
+Body Ends: 10240
+Selvedge Ends: 128
+Total Ends: 10368
+Ends Per Repeat: 2
+Shaft Count: 4
+Warp Count Ne: 80
+Weft Count Ne: 80
+Warp Weight Percent: 63
+Weft Weight Percent: 37
+Pick Rate Meters Per Min: 8.0
+Finish Code: CT-DA
+K1: HMM25W
+K2: W15001
+K3: C90001
+K4: HH04
+K5: CT-DA
